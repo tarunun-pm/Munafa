@@ -58,13 +58,28 @@ export default function OnboardingPage() {
     setIsSending(true)
     setAuthErr('')
     try {
+      // 1. Try Twilio Verify service
+      const res = await fetch('/api/auth/otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'send', phone: `+91${phone}` }),
+      })
+
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setOtpSent(true)
+        setTimeout(() => otpRefs.current[0]?.focus(), 80)
+        return
+      }
+
+      // 2. Fallback to Supabase SMS auth if Twilio not configured
       const supabase = createBrowserClient()
       const { error } = await supabase.auth.signInWithOtp({
         phone: `+91${phone}`,
         options: { channel: 'sms' },
       })
       if (error) {
-        setAuthErr(error.message)
+        setAuthErr(data.error || error.message)
       } else {
         setOtpSent(true)
         setTimeout(() => otpRefs.current[0]?.focus(), 80)
@@ -96,6 +111,20 @@ export default function OnboardingPage() {
     setIsVerifying(true)
     setAuthErr('')
     try {
+      // 1. Try Twilio Verify check
+      const res = await fetch('/api/auth/otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'verify', phone: `+91${phone}`, code }),
+      })
+
+      const data = await res.json()
+      if (res.ok && data.verified) {
+        goToStep(2)
+        return
+      }
+
+      // 2. Fallback to Supabase verify if Twilio verification wasn't used
       const supabase = createBrowserClient()
       const { error } = await supabase.auth.verifyOtp({
         phone: `+91${phone}`,
@@ -103,7 +132,7 @@ export default function OnboardingPage() {
         type: 'sms',
       })
       if (error) {
-        setAuthErr(error.message)
+        setAuthErr(data.error || error.message)
       } else {
         goToStep(2)
       }
