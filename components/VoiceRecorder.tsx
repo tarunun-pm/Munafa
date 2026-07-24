@@ -26,7 +26,7 @@ interface SpeechRecognition extends EventTarget {
   stop():  void
   abort(): void
 }
-declare var SpeechRecognition: {
+declare const SpeechRecognition: {
   new(): SpeechRecognition
   prototype: SpeechRecognition
 }

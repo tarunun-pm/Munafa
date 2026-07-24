@@ -330,7 +330,7 @@ function HistoryTab({ data }: { data: GetSummaryResponse | null }) {
   return (
     <div className="px-4 pt-5">
       <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-500 mb-3">
-        Today's Entries
+        Today&apos;s Entries
       </p>
       <TransactionList transactions={data.transactions} />
     </div>
