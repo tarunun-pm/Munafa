@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
-import { transcribeAudio } from '@/lib/whisper'
 import { parseVoiceTranscript } from '@/lib/claude'
 import type { ParsedEntry, Transaction } from '@/types'
 
@@ -92,22 +91,14 @@ export async function POST(req: NextRequest) {
 
   try {
     const formData = await req.formData()
-    const audioBlob = formData.get('audio') as Blob | null
-    if (!audioBlob) {
-      return NextResponse.json({ error: 'No audio provided' }, { status: 400 })
-    }
 
-    // ── Step 1: Whisper transcription ──────────────────────
-    let rawText: string
-    try {
-      rawText = await transcribeAudio(audioBlob, 'hi')
-    } catch (err) {
-      console.error('[log-voice] Whisper error:', err)
+    // ── Step 1: Read transcript from Web Speech API (browser-side) ──
+    const rawText = (formData.get('transcript') as string | null)?.trim()
+    if (!rawText) {
       return NextResponse.json({
         success: false,
         entries: [],
-        confirmation_text:
-          'Awaaz clear nahi aayi. Dobara boliye.',
+        confirmation_text: 'Kuch sunai nahi diya. Dobara boliye.',
       })
     }
 
