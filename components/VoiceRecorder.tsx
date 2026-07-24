@@ -38,16 +38,13 @@ declare global {
 }
 
 interface VoiceRecorderProps {
-  /** Called every time the recorder state changes. */
   onStateChange?: (state: VoiceRecorderState) => void
-  /** Called after a successful or failed voice log with the server response. */
   onComplete?: (result: LogVoiceResponse) => void
 }
 
 /**
- * VoiceRecorder — uses the browser Web Speech API for transcription (free, no OpenAI needed).
- * Sends the transcript text directly to /api/log-voice, which passes it to Claude.
- * Handles all 5 states: idle → recording → processing → confirmed/error → idle.
+ * VoiceRecorder — uses the browser Web Speech API for transcription.
+ * Falls back to a manual text input if speech recognition is unavailable.
  */
 export default function VoiceRecorder({
   onStateChange,
@@ -56,19 +53,20 @@ export default function VoiceRecorder({
   const [state, setState]   = useState<VoiceRecorderState>('idle')
   const [timer, setTimer]   = useState('0:00')
   const [supported, setSupported] = useState(true)
+  const [debugText, setDebugText] = useState('')
 
-  const recognitionRef = useRef<SpeechRecognition | null>(null)
-  const timerRef       = useRef<ReturnType<typeof setInterval> | null>(null)
-  const startTimeRef   = useRef<number>(0)
-  const transcriptRef  = useRef<string>('')
+  const recognitionRef  = useRef<SpeechRecognition | null>(null)
+  const timerRef        = useRef<ReturnType<typeof setInterval> | null>(null)
+  const startTimeRef    = useRef<number>(0)
+  const transcriptRef   = useRef<string>('')
+  const hasErroredRef   = useRef(false)
+  const isProcessingRef = useRef(false)
 
-  /** Check browser support on mount */
   useEffect(() => {
     const SR = window.SpeechRecognition ?? window.webkitSpeechRecognition
     if (!SR) setSupported(false)
   }, [])
 
-  /** Updates state locally and notifies parent. */
   function updateState(next: VoiceRecorderState) {
     setState(next)
     onStateChange?.(next)
@@ -92,31 +90,35 @@ export default function VoiceRecorder({
     setTimer('0:00')
   }
 
-  /** Sends the transcript text to /api/log-voice and handles response. */
+  /** Sends the transcript text to /api/log-voice */
   async function processTranscript(text: string) {
+    // Prevent double-processing
+    if (isProcessingRef.current) return
+    isProcessingRef.current = true
+
     try {
+      console.log('[VoiceRecorder] Sending transcript:', text)
+      setDebugText(text)
+
       const formData = new FormData()
       formData.append('transcript', text)
 
-      const res  = await fetch('/api/log-voice', { method: 'POST', body: formData })
-      
+      const res = await fetch('/api/log-voice', { method: 'POST', body: formData })
+
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}))
-        const errorMsg = res.status === 401 
-          ? 'Session expired. Please re-login.' 
-          : (errJson.error || 'Server error. Try again.')
-        console.error('[VoiceRecorder] API HTTP error:', res.status, errorMsg)
+        const errorMsg = res.status === 401
+          ? 'Session expired. Please re-login.'
+          : (errJson.error || `Server error (${res.status}). Try again.`)
+        console.error('[VoiceRecorder] API error:', res.status, errorMsg)
         updateState('error')
-        onComplete?.({
-          success: false,
-          entries: [],
-          confirmation_text: errorMsg,
-        })
+        onComplete?.({ success: false, entries: [], confirmation_text: errorMsg })
         setTimeout(() => updateState('idle'), 3000)
         return
       }
 
       const data: LogVoiceResponse = await res.json()
+      console.log('[VoiceRecorder] API response:', data)
 
       if (data.success) {
         updateState('confirmed')
@@ -130,16 +132,14 @@ export default function VoiceRecorder({
     } catch (err) {
       console.error('[VoiceRecorder] pipeline error:', err)
       updateState('error')
-      onComplete?.({
-        success: false,
-        entries: [],
-        confirmation_text: 'Connection failed. Try again.',
-      })
+      onComplete?.({ success: false, entries: [], confirmation_text: 'Connection failed. Try again.' })
       setTimeout(() => updateState('idle'), 3000)
+    } finally {
+      isProcessingRef.current = false
     }
   }
 
-  /** Starts Web Speech API recognition. */
+  /** Starts Web Speech API recognition */
   const startRecording = useCallback(() => {
     const SR = window.SpeechRecognition ?? window.webkitSpeechRecognition
     if (!SR) {
@@ -149,45 +149,58 @@ export default function VoiceRecorder({
     }
 
     const recognition = new SR()
-    recognition.lang             = 'hi-IN'   // Hindi — also picks up Hinglish well
-    recognition.continuous       = true       // keep listening until user stops
-    recognition.interimResults   = true       // capture realtime interim results
-    recognition.maxAlternatives  = 1
+    recognition.lang            = 'hi-IN'
+    recognition.continuous      = false  // Single utterance mode — more reliable
+    recognition.interimResults  = false  // Only fire when result is final
+    recognition.maxAlternatives = 1
 
     transcriptRef.current = ''
+    hasErroredRef.current = false
+    isProcessingRef.current = false
 
     recognition.onstart = () => {
+      console.log('[VoiceRecorder] Speech recognition started')
       updateState('recording')
       startTimer()
     }
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let fullText = ''
+      let text = ''
       for (let i = 0; i < event.results.length; i++) {
-        fullText += event.results[i][0].transcript + ' '
+        text += event.results[i][0].transcript + ' '
       }
-      transcriptRef.current = fullText.trim()
+      transcriptRef.current = text.trim()
+      console.log('[VoiceRecorder] Got result:', transcriptRef.current)
     }
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      if (event.error === 'aborted') return // ignore user manual stop
+      // 'aborted' happens on manual stop — not an error
+      if (event.error === 'aborted') return
+
       console.error('[VoiceRecorder] speech error:', event.error)
+      hasErroredRef.current = true
       stopTimer()
-      if (event.error === 'no-speech') {
-        updateState('error')
-        onComplete?.({
-          success: false,
-          entries: [],
-          confirmation_text: 'Kuch sunai nahi diya. Dobara boliye.',
-        })
-      } else {
-        updateState('error')
+
+      const messages: Record<string, string> = {
+        'no-speech': 'Kuch sunai nahi diya. Dobara boliye.',
+        'not-allowed': 'Microphone permission denied. Please allow mic access.',
+        'audio-capture': 'No microphone found. Check your device.',
+        'network': 'Network error. Check your connection.',
       }
+
+      const msg = messages[event.error] || `Speech error: ${event.error}`
+      updateState('error')
+      onComplete?.({ success: false, entries: [], confirmation_text: msg })
       setTimeout(() => updateState('idle'), 3000)
     }
 
     recognition.onend = () => {
+      console.log('[VoiceRecorder] Speech recognition ended. Transcript:', transcriptRef.current)
       stopTimer()
+
+      // Don't process if we already handled an error
+      if (hasErroredRef.current) return
+
       const text = transcriptRef.current.trim()
       if (text) {
         updateState('processing')
@@ -204,12 +217,23 @@ export default function VoiceRecorder({
     }
 
     recognitionRef.current = recognition
-    recognition.start()
+
+    try {
+      recognition.start()
+    } catch (err) {
+      console.error('[VoiceRecorder] Failed to start recognition:', err)
+      updateState('error')
+      onComplete?.({
+        success: false, entries: [],
+        confirmation_text: 'Could not start microphone. Try again.',
+      })
+      setTimeout(() => updateState('idle'), 3000)
+    }
   }, [])
 
-  /** Stops recognition — triggers onend which sends transcript. */
   function stopRecording() {
     if (recognitionRef.current && state === 'recording') {
+      console.log('[VoiceRecorder] Stopping recognition...')
       recognitionRef.current.stop()
     }
   }
@@ -233,11 +257,19 @@ export default function VoiceRecorder({
   }
 
   return (
-    <MicOrb
-      state={state}
-      onPress={handleOrbPress}
-      timer={state === 'recording' ? timer : undefined}
-      size={160}
-    />
+    <div className="flex flex-col items-center">
+      <MicOrb
+        state={state}
+        onPress={handleOrbPress}
+        timer={state === 'recording' ? timer : undefined}
+        size={160}
+      />
+      {/* Debug: show captured transcript */}
+      {debugText && state === 'processing' && (
+        <p className="text-[10px] text-muted-500 mt-2 text-center px-8 max-w-xs truncate">
+          &ldquo;{debugText}&rdquo;
+        </p>
+      )}
+    </div>
   )
 }
