@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 import BottomNav from '@/components/BottomNav'
+import ProfileModal from '@/components/ProfileModal'
 import type { Item, Supplier } from '@/types'
 
 function sb() {
@@ -23,17 +24,16 @@ export default function CataloguePage() {
   const router = useRouter()
 
   const [vendorId, setVendorId]         = useState<string | null>(null)
-  const [activeTab, setActiveTab]       = useState<'items' | 'suppliers'>('items')
-  const [isLoading, setIsLoading]       = useState(true)
-
-  // Items state
-  const [items, setItems]               = useState<Item[]>([])
+  const [activeTab,        setActiveTab]        = useState<'items' | 'suppliers'>('items')
+  const [items,            setItems]            = useState<Item[]>([])
+  const [suppliers,        setSuppliers]        = useState<Supplier[]>([])
+  const [isLoading,        setIsLoading]        = useState(true)
+  const [isProfileOpen,    setIsProfileOpen]    = useState(false)
   const [showAddItem, setShowAddItem]   = useState(false)
   const [itemSearch, setItemSearch]     = useState('')
   const [deletingItem, setDeletingItem] = useState<string | null>(null)
 
   // Suppliers state
-  const [suppliers, setSuppliers]           = useState<Supplier[]>([])
   const [showAddSupplier, setShowAddSupplier] = useState(false)
   const [deletingSupplier, setDeletingSupplier] = useState<string | null>(null)
 
@@ -102,16 +102,35 @@ export default function CataloguePage() {
           paddingBottom: 24,
         }}
       >
-        <div className="pt-4">
-          <h1
-            className="text-xl font-bold text-white"
-            style={{ fontFamily: 'var(--font-baloo)' }}
+        <div className="flex items-center justify-between pt-4">
+          <div>
+            <h1
+              className="text-xl font-bold text-white"
+              style={{ fontFamily: 'var(--font-baloo)' }}
+            >
+              Catalogue
+            </h1>
+            <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
+              Manage your items &amp; suppliers
+            </p>
+          </div>
+
+          {/* Settings button */}
+          <button
+            onClick={() => setIsProfileOpen(true)}
+            className="w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-95"
+            style={{ background: 'rgba(255,255,255,0.1)' }}
+            aria-label="Profile and Settings"
           >
-            Catalogue
-          </h1>
-          <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
-            Manage your items & suppliers
-          </p>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="3" stroke="white" strokeWidth="2" />
+              <path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
+                stroke="white"
+                strokeWidth="2"
+              />
+            </svg>
+          </button>
         </div>
 
         {/* Tab switcher */}
@@ -276,6 +295,12 @@ export default function CataloguePage() {
           </div>
         )}
       </div>
+
+      {/* Profile & Settings Modal */}
+      <ProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+      />
 
       <BottomNav
         activeTab="catalogue"

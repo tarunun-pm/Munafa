@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import BottomNav from '@/components/BottomNav'
+import ProfileModal from '@/components/ProfileModal'
 import type { DailySummary, Transaction } from '@/types'
 
 /* ────────────────────────────────────────────────
@@ -58,6 +59,7 @@ export default function HistoryPage() {
   const [isLoading,   setIsLoading]   = useState(true)
   const [expanded,    setExpanded]    = useState<string | null>(null)
   const [expandedTx,  setExpandedTx]  = useState<Transaction[]>([])
+  const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [txLoading,   setTxLoading]   = useState(false)
 
   useEffect(() => { loadHistory() }, [])
@@ -142,33 +144,52 @@ export default function HistoryPage() {
           paddingBottom: 28,
         }}
       >
-        <div className="flex items-center gap-3 pt-4">
-          {/* Back button */}
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-90"
-            style={{ background: 'rgba(255,255,255,0.1)' }}
-            aria-label="Back to dashboard"
-          >
-            <svg
-              width="18" height="18" viewBox="0 0 24 24" fill="none"
-              stroke="white" strokeWidth="2.5"
-              strokeLinecap="round" strokeLinejoin="round"
+        <div className="flex items-center justify-between pt-4">
+          <div className="flex items-center gap-3">
+            {/* Back button */}
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-90"
+              style={{ background: 'rgba(255,255,255,0.1)' }}
+              aria-label="Back to dashboard"
             >
-              <path d="M19 12H5m7-7-7 7 7 7" />
+              <svg
+                width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="white" strokeWidth="2.5"
+                strokeLinecap="round" strokeLinejoin="round"
+              >
+                <path d="M19 12H5m7-7-7 7 7 7" />
+              </svg>
+            </button>
+            <div>
+              <h1
+                className="text-xl font-bold text-white"
+                style={{ fontFamily: 'var(--font-baloo)' }}
+              >
+                History
+              </h1>
+              <p className="text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                Your daily profit log
+              </p>
+            </div>
+          </div>
+
+          {/* Settings button */}
+          <button
+            onClick={() => setIsProfileOpen(true)}
+            className="w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-95"
+            style={{ background: 'rgba(255,255,255,0.1)' }}
+            aria-label="Profile and Settings"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="3" stroke="white" strokeWidth="2" />
+              <path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
+                stroke="white"
+                strokeWidth="2"
+              />
             </svg>
           </button>
-          <div>
-            <h1
-              className="text-xl font-bold text-white"
-              style={{ fontFamily: 'var(--font-baloo)' }}
-            >
-              History
-            </h1>
-            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>
-              Your daily profit log
-            </p>
-          </div>
         </div>
 
         {/* ── Aggregate stat chips ── */}
@@ -424,6 +445,12 @@ export default function HistoryPage() {
       </div>
 
       {/* ─── Bottom Nav ─── */}
+      {/* Profile & Settings Modal */}
+      <ProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+      />
+
       <BottomNav
         activeTab="history"
         onTabChange={t => {

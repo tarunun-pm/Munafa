@@ -8,6 +8,7 @@ import ProfitTrendCard from '@/components/ProfitTrendCard'
 import TransactionList from '@/components/TransactionList'
 import ConfirmationToast from '@/components/ConfirmationToast'
 import BottomNav from '@/components/BottomNav'
+import ProfileModal from '@/components/ProfileModal'
 import type { GetSummaryResponse, VoiceRecorderState, LogVoiceResponse } from '@/types'
 
 function getGreeting(): string {
@@ -38,6 +39,7 @@ export default function DashboardPage() {
   const [toast, setToast]           = useState<string | null>(null)
   const [recorderState, setRecorderState] = useState<VoiceRecorderState>('idle')
   const [mounted, setMounted]       = useState(false)
+  const [isProfileOpen, setIsProfileOpen] = useState(false)
 
   /* ── Fetch today's summary ── */
   const fetchSummary = useCallback(async () => {
@@ -124,9 +126,10 @@ export default function DashboardPage() {
 
           {/* Settings icon */}
           <button
-            className="w-9 h-9 rounded-xl flex items-center justify-center mt-1"
+            onClick={() => setIsProfileOpen(true)}
+            className="w-9 h-9 rounded-xl flex items-center justify-center mt-1 transition-all active:scale-95"
             style={{ background: 'rgba(255,255,255,0.1)' }}
-            aria-label="Settings"
+            aria-label="Profile and Settings"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
               <circle cx="12" cy="12" r="3" stroke="white" strokeWidth="2" />
@@ -166,6 +169,12 @@ export default function DashboardPage() {
           onDismiss={() => setToast(null)}
         />
       )}
+
+      {/* ── Profile & Settings Modal ── */}
+      <ProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+      />
 
       {/* ── Bottom nav ── */}
       <BottomNav

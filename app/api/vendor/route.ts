@@ -102,9 +102,36 @@ export async function GET(req: NextRequest) {
 
 /**
  * DELETE /api/vendor
- * Logs out by clearing session cookies.
+ * If query param ?action=delete_account is present, deletes all database records for this vendor
+ * (price_history, transactions, daily_summaries, suppliers, custom items, vendors)
+ * then clears session cookies.
+ * Otherwise, performs a standard logout (clearing session cookies).
  */
-export async function DELETE() {
+export async function DELETE(req: NextRequest) {
+  const vendorId = req.cookies.get('munafa_vendor_id')?.value
+  const action = req.nextUrl.searchParams.get('action')
+
+  if (action === 'delete_account' && vendorId) {
+    const client = sb()
+    try {
+      // 1. Delete price_history
+      await client.from('price_history').delete().eq('vendor_id', vendorId)
+      // 2. Delete transactions
+      await client.from('transactions').delete().eq('vendor_id', vendorId)
+      // 3. Delete daily_summaries
+      await client.from('daily_summaries').delete().eq('vendor_id', vendorId)
+      // 4. Delete suppliers
+      await client.from('suppliers').delete().eq('vendor_id', vendorId)
+      // 5. Delete custom items (items created by this vendor)
+      await client.from('items').delete().eq('vendor_id', vendorId)
+      // 6. Delete vendor account
+      await client.from('vendors').delete().eq('id', vendorId)
+    } catch (err) {
+      console.error('[vendor] error deleting account data:', err)
+      return NextResponse.json({ error: 'Failed to delete account data' }, { status: 500 })
+    }
+  }
+
   const res = NextResponse.json({ success: true })
   res.cookies.delete('munafa_vendor_id')
   res.cookies.delete('munafa_vendor_name')
