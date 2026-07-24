@@ -39,7 +39,7 @@ export default function PnLCard({ summary, isLoading }: PnLCardProps) {
     >
       {/* Card title */}
       <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-500 mb-4">
-        Today's Munafa
+        Today&apos;s Munafa
       </p>
 
       {/* Three metric chips */}
@@ -65,7 +65,6 @@ export default function PnLCard({ summary, isLoading }: PnLCardProps) {
           bg={isPositive ? '#DDEDE5' : '#EFE4CC'}
           icon={isPositive ? <ArrowUp /> : <Minus />}
           highlight
-          isPositive={isPositive}
         />
       </div>
 
@@ -97,7 +96,7 @@ export default function PnLCard({ summary, isLoading }: PnLCardProps) {
 }
 
 function MetricChip({
-  label, value, accent, bg, icon, highlight, isPositive,
+  label, value, accent, bg, icon, highlight,
 }: {
   label: string
   value: string
@@ -105,7 +104,6 @@ function MetricChip({
   bg: string
   icon: React.ReactNode
   highlight?: boolean
-  isPositive?: boolean
 }) {
   return (
     <div className="rounded-xl p-3 flex flex-col gap-1.5" style={{ background: bg }}>

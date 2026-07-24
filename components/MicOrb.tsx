@@ -156,7 +156,7 @@ export default function MicOrb({
 
         {isError && (
           <p className="text-alert-500 font-medium text-sm anim-fade-up">
-            Couldn't process. Try again.
+            Couldn&apos;t process. Try again.
           </p>
         )}
       </div>

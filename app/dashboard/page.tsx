@@ -238,7 +238,7 @@ function HomeTab({
           >
             Say something like{' '}
             <em className="not-italic font-semibold text-ink-green-700">
-              "Sold 5 kg tomatoes for ₹200"
+              &ldquo;Sold 5 kg tomatoes for ₹200&rdquo;
             </em>
           </p>
         )}
@@ -248,7 +248,7 @@ function HomeTab({
       {data?.transactions && data.transactions.length > 0 && (
         <div className="anim-fade-up">
           <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-500 mb-3">
-            Today's Entries
+            Today&apos;s Entries
           </p>
           <TransactionList transactions={data.transactions} />
         </div>
