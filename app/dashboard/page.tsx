@@ -66,8 +66,10 @@ export default function DashboardPage() {
 
   /* ── After a successful voice log, refresh data + show toast ── */
   function handleVoiceComplete(result: LogVoiceResponse) {
-    if (result.success) {
+    if (result.confirmation_text) {
       setToast(result.confirmation_text)
+    }
+    if (result.success) {
       fetchSummary()
     }
   }

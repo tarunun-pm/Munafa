@@ -86,6 +86,7 @@ async function matchOrCreateSupplier(
 export async function POST(req: NextRequest) {
   const vendorId = req.cookies.get('munafa_vendor_id')?.value
   if (!vendorId) {
+    console.warn('[log-voice] No munafa_vendor_id cookie — returning 401')
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
   }
 
@@ -94,6 +95,7 @@ export async function POST(req: NextRequest) {
 
     // ── Step 1: Read transcript from Web Speech API (browser-side) ──
     const rawText = (formData.get('transcript') as string | null)?.trim()
+    console.log('[log-voice] vendor:', vendorId, '| transcript:', rawText?.slice(0, 80))
     if (!rawText) {
       return NextResponse.json({
         success: false,
@@ -106,6 +108,7 @@ export async function POST(req: NextRequest) {
     let parseResult
     try {
       parseResult = await parseVoiceTranscript(rawText)
+      console.log('[log-voice] Claude parsed entries:', parseResult?.entries?.length ?? 0)
     } catch (err) {
       console.error('[log-voice] Claude error:', err)
       // Save raw text even on parse failure
@@ -125,6 +128,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (!parseResult?.entries?.length) {
+      console.warn('[log-voice] Claude returned 0 entries for text:', rawText)
       return NextResponse.json({
         success: false,
         entries: [],

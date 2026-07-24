@@ -61,7 +61,10 @@ export async function parseVoiceTranscript(
     messages: [{ role: 'user', content: transcription }],
   })
 
-  const raw = msg.content[0].type === 'text' ? msg.content[0].text : ''
+  let raw = msg.content[0].type === 'text' ? msg.content[0].text : ''
+
+  // Claude sometimes wraps JSON in markdown code fences despite instructions
+  raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
 
   try {
     return JSON.parse(raw) as ParseVoiceResult
