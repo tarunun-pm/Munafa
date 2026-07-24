@@ -23,9 +23,10 @@ export async function POST(req: NextRequest) {
       try {
         const success = await sendTwilioOtp(phone, channel || 'sms')
         return NextResponse.json({ success, message: `OTP sent via ${channel || 'sms'}` })
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('[auth/otp] send error:', err)
-        return NextResponse.json({ error: err.message || 'Failed to send OTP' }, { status: 500 })
+        const message = err instanceof Error ? err.message : 'Failed to send OTP'
+        return NextResponse.json({ error: message }, { status: 500 })
       }
     }
 
@@ -39,9 +40,10 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ error: 'Invalid or expired OTP code' }, { status: 400 })
         }
         return NextResponse.json({ success: true, verified: true })
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('[auth/otp] verify error:', err)
-        return NextResponse.json({ error: err.message || 'Failed to verify OTP' }, { status: 500 })
+        const message = err instanceof Error ? err.message : 'Failed to verify OTP'
+        return NextResponse.json({ error: message }, { status: 500 })
       }
     }
 
