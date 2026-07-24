@@ -1,0 +1,15 @@
+[build]
+  command   = "npm run build"
+  publish   = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+  NODE_OPTIONS = "--max-old-space-size=4096"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Cron job equivalent — Netlify Scheduled Functions
+# Since Vercel crons aren't available on Netlify, the /api/send-summary
+# endpoint can be triggered via a Netlify Scheduled Function or an external cron.
+# For now the endpoint is available to call manually or via an external scheduler.

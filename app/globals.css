@@ -1,0 +1,229 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   MUNAFA DESIGN TOKENS
+   ============================================================ */
+:root {
+  --munafa-turmeric-100: #FCE8C4;
+  --munafa-turmeric-500: #F2A93B;
+  --munafa-turmeric-600: #DB8F1F;
+  --munafa-ink-green-100: #DDEDE5;
+  --munafa-ink-green-500: #2C7A5E;
+  --munafa-ink-green-700: #1B5B45;
+  --munafa-ink-green-900: #0F3D2E;
+  --munafa-cream-50: #FFFBF3;
+  --munafa-cream-100: #FBF3E3;
+  --munafa-sand-200: #EFE4CC;
+  --munafa-charcoal-800: #2A2622;
+  --munafa-muted-500: #8A8272;
+  --munafa-alert-500: #C9563B;
+}
+
+/* ============================================================
+   KEYFRAME ANIMATIONS
+   ============================================================ */
+
+/* Orb breathing — idle state, 2s loop */
+@keyframes orb-breathe {
+  0%,
+  100% { transform: scale(1); }
+  50%  { transform: scale(1.035); }
+}
+
+/* Pulse ring — expands and fades when recording */
+@keyframes pulse-ring {
+  0%   { transform: scale(0.88); opacity: 0.75; }
+  100% { transform: scale(1.65); opacity: 0; }
+}
+
+/* Processing arc — slow single-rotation */
+@keyframes spin-arc {
+  to { transform: rotate(360deg); }
+}
+
+/* Confirmation checkmark draw */
+@keyframes check-draw {
+  from { stroke-dashoffset: 50; opacity: 0; }
+  to   { stroke-dashoffset: 0;  opacity: 1; }
+}
+
+/* Toast slide-up */
+@keyframes slide-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* General fade-in-up */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Step transition — enter from right */
+@keyframes step-in {
+  from { opacity: 0; transform: translateX(28px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Waveform bars (recording state) */
+@keyframes wave-bar {
+  0%,
+  100% { transform: scaleY(0.25); }
+  50%  { transform: scaleY(1); }
+}
+
+/* Shimmer sweep for skeleton loaders */
+@keyframes shimmer-sweep {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Shake (error state) */
+@keyframes shake {
+  0%,100%  { transform: translateX(0); }
+  20%,60%  { transform: translateX(-6px); }
+  40%,80%  { transform: translateX(6px); }
+}
+
+/* ============================================================
+   ANIMATION UTILITY CLASSES
+   ============================================================ */
+
+.anim-orb-breathe         { animation: orb-breathe 2s ease-in-out infinite; }
+
+.anim-pulse-ring          { animation: pulse-ring 1.25s ease-out infinite; }
+.anim-pulse-ring-delayed  { animation: pulse-ring 1.25s ease-out 0.5s infinite; }
+
+.anim-spin-arc            { animation: spin-arc 1.5s linear infinite; }
+
+.anim-slide-up            { animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+
+.anim-fade-up             { animation: fade-up 0.35s ease-out; }
+
+.anim-step-in             { animation: step-in 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+
+.anim-shake               { animation: shake 0.4s ease-out; }
+
+/* Waveform bars — each with slight delay for naturalness */
+.anim-wave-1 { animation: wave-bar 0.9s ease-in-out infinite; }
+.anim-wave-2 { animation: wave-bar 0.9s ease-in-out 0.07s infinite; }
+.anim-wave-3 { animation: wave-bar 0.9s ease-in-out 0.18s infinite; }
+.anim-wave-4 { animation: wave-bar 0.9s ease-in-out 0.11s infinite; }
+.anim-wave-5 { animation: wave-bar 0.9s ease-in-out 0.25s infinite; }
+
+/* ============================================================
+   GLASS EFFECTS
+   ============================================================ */
+
+/* Dark glass — used on onboarding card, overlays on dark bg */
+.glass-dark {
+  background: rgba(255, 255, 255, 0.065);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.11);
+}
+
+/* Light glass — used on cards over cream background */
+.glass-light {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+}
+
+/* ============================================================
+   MANDI DAWN SIGNATURE GRADIENT
+   ============================================================ */
+
+/* Full radial gradient — used only on mic orb glow */
+.orb-glow {
+  background: radial-gradient(
+    circle at 50% 35%,
+    #FCE8C4 0%,
+    #F2A93B 28%,
+    #DB8F1F 52%,
+    #1B5B45 78%,
+    #0F3D2E 100%
+  );
+}
+
+/* Soft mandi dawn top glow — used on onboarding / welcome screen */
+.mandi-dawn-glow {
+  background: radial-gradient(
+    ellipse 75% 45% at 50% -5%,
+    rgba(242, 169, 59, 0.28) 0%,
+    rgba(27, 91, 69, 0.1) 55%,
+    transparent 100%
+  );
+}
+
+/* ============================================================
+   SHIMMER SKELETON
+   ============================================================ */
+
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.18) 50%,
+    transparent 100%
+  );
+  animation: shimmer-sweep 1.6s ease-in-out infinite;
+}
+
+/* ============================================================
+   SCROLLBAR HIDE
+   ============================================================ */
+
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
+/* ============================================================
+   SAFE AREA PADDING (PWA / notch support)
+   ============================================================ */
+
+.pb-safe { padding-bottom: max(env(safe-area-inset-bottom, 0px), 16px); }
+.pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+
+/* ============================================================
+   FOCUS RING
+   ============================================================ */
+
+.focus-turmeric:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(242, 169, 59, 0.5);
+  border-radius: inherit;
+}
+
+/* ============================================================
+   REDUCED MOTION — accessibility override
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-orb-breathe,
+  .anim-pulse-ring,
+  .anim-pulse-ring-delayed,
+  .anim-spin-arc,
+  .anim-wave-1,
+  .anim-wave-2,
+  .anim-wave-3,
+  .anim-wave-4,
+  .anim-wave-5,
+  .anim-shake { animation: none; }
+
+  .anim-slide-up,
+  .anim-fade-up,
+  .anim-step-in { animation: fade-up 0.15s ease-out; }
+}
