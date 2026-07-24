@@ -99,6 +99,23 @@ export default function VoiceRecorder({
       formData.append('transcript', text)
 
       const res  = await fetch('/api/log-voice', { method: 'POST', body: formData })
+      
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}))
+        const errorMsg = res.status === 401 
+          ? 'Session expired. Please re-login.' 
+          : (errJson.error || 'Server error. Try again.')
+        console.error('[VoiceRecorder] API HTTP error:', res.status, errorMsg)
+        updateState('error')
+        onComplete?.({
+          success: false,
+          entries: [],
+          confirmation_text: errorMsg,
+        })
+        setTimeout(() => updateState('idle'), 3000)
+        return
+      }
+
       const data: LogVoiceResponse = await res.json()
 
       if (data.success) {
@@ -113,6 +130,11 @@ export default function VoiceRecorder({
     } catch (err) {
       console.error('[VoiceRecorder] pipeline error:', err)
       updateState('error')
+      onComplete?.({
+        success: false,
+        entries: [],
+        confirmation_text: 'Connection failed. Try again.',
+      })
       setTimeout(() => updateState('idle'), 3000)
     }
   }
@@ -129,7 +151,7 @@ export default function VoiceRecorder({
     const recognition = new SR()
     recognition.lang             = 'hi-IN'   // Hindi — also picks up Hinglish well
     recognition.continuous       = true       // keep listening until user stops
-    recognition.interimResults   = false      // only final results
+    recognition.interimResults   = true       // capture realtime interim results
     recognition.maxAlternatives  = 1
 
     transcriptRef.current = ''
@@ -140,18 +162,17 @@ export default function VoiceRecorder({
     }
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
-      // Accumulate all final results
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        if (event.results[i].isFinal) {
-          transcriptRef.current += event.results[i][0].transcript + ' '
-        }
+      let fullText = ''
+      for (let i = 0; i < event.results.length; i++) {
+        fullText += event.results[i][0].transcript + ' '
       }
+      transcriptRef.current = fullText.trim()
     }
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      if (event.error === 'aborted') return // ignore user manual stop
       console.error('[VoiceRecorder] speech error:', event.error)
       stopTimer()
-      // 'no-speech' is not a fatal error — just means silence
       if (event.error === 'no-speech') {
         updateState('error')
         onComplete?.({
@@ -190,7 +211,6 @@ export default function VoiceRecorder({
   function stopRecording() {
     if (recognitionRef.current && state === 'recording') {
       recognitionRef.current.stop()
-      // timer + state update handled in onend
     }
   }
 
