@@ -9,7 +9,7 @@ function sb() {
   )
 }
 
-const VALID_UNITS: ItemUnit[] = ['kg', 'litre', 'piece', 'bundle']
+const VALID_UNITS: ItemUnit[] = ['kg', 'gram', 'litre', 'piece', 'bundle']
 
 /**
  * PATCH /api/transactions/[id]
@@ -30,7 +30,7 @@ export async function PATCH(
   const { id } = await params
 
   try {
-    const { unit } = await req.json()
+    const { unit, quantity } = await req.json()
 
     if (!VALID_UNITS.includes(unit as ItemUnit)) {
       return NextResponse.json(
@@ -51,15 +51,17 @@ export async function PATCH(
       return NextResponse.json({ error: 'Transaction not found' }, { status: 404 })
     }
 
-    // Compute unit_price if quantity is known
+    const finalQuantity = quantity !== undefined ? quantity : tx.quantity
+
+    // Compute unit_price if finalQuantity is known
     const unit_price =
-      tx.quantity && tx.quantity > 0
-        ? Math.round((tx.total_amount / tx.quantity) * 100) / 100
+      finalQuantity && finalQuantity > 0
+        ? Math.round((tx.total_amount / finalQuantity) * 100) / 100
         : null
 
     const { error: updateErr } = await sb()
       .from('transactions')
-      .update({ unit, unit_price })
+      .update({ unit, quantity: finalQuantity, unit_price })
       .eq('id', id)
       .eq('vendor_id', vendorId)
 

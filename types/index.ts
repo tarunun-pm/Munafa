@@ -9,7 +9,7 @@ export type ItemCategory =
   | "misc";
 
 /** Supported measurement units for items and transactions. */
-export type ItemUnit = "kg" | "litre" | "piece" | "bundle";
+export type ItemUnit = "kg" | "gram" | "litre" | "piece" | "bundle";
 
 /** Vendor language preference. */
 export type VendorLanguage = "en" | "hi";

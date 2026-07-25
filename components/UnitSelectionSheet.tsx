@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import type { ItemUnit, PendingUnit } from '@/types'
 
 interface UnitSelectionSheetProps {
@@ -22,6 +22,13 @@ const UNIT_OPTIONS: {
     labelHi: 'Kilo / Kilogram',
     examples: 'pao, aadha kilo, 2 kg…',
     icon: '⚖️',
+  },
+  {
+    unit: 'gram',
+    label: 'Gram',
+    labelHi: 'Gram',
+    examples: '100 gram, 250 gram, 500g…',
+    icon: '🥄',
   },
   {
     unit: 'litre',
@@ -65,8 +72,15 @@ export default function UnitSelectionSheet({ pending, onAllResolved }: UnitSelec
   const [index,   setIndex]   = useState(0)
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState<string | null>(null)
+  const [manualQuantity, setManualQuantity] = useState<string>('')
 
   const current = pending[index]
+
+  useEffect(() => {
+    if (current) {
+      setManualQuantity(current.quantity ? String(current.quantity) : '')
+    }
+  }, [current])
 
   const advance = useCallback(() => {
     setError(null)
@@ -81,10 +95,11 @@ export default function UnitSelectionSheet({ pending, onAllResolved }: UnitSelec
     setLoading(true)
     setError(null)
     try {
+      const parsedQuantity = manualQuantity.trim() !== '' ? parseFloat(manualQuantity) : current.quantity
       const res = await fetch(`/api/transactions/${current.transaction_id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ unit }),
+        body: JSON.stringify({ unit, quantity: parsedQuantity }),
       })
       if (!res.ok) throw new Error('Update failed')
       advance()
@@ -174,6 +189,27 @@ export default function UnitSelectionSheet({ pending, onAllResolved }: UnitSelec
           </div>
         </div>
 
+        {/* Quantity Input */}
+        <div className="mb-4">
+          <label className="text-xs font-semibold block mb-1.5" style={{ color: '#4A5E55' }} htmlFor="quantity-input">
+            Sahi Quantity (agar galat hai ya empty hai)
+          </label>
+          <input
+            id="quantity-input"
+            type="number"
+            step="any"
+            value={manualQuantity}
+            onChange={e => setManualQuantity(e.target.value)}
+            placeholder="e.g. 5"
+            className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all"
+            style={{
+              background: 'white',
+              border: '1.5px solid #E8E0D0',
+              color: '#1A2E24',
+            }}
+          />
+        </div>
+
         {/* Unit option grid */}
         <div className="grid grid-cols-2 gap-2.5 mb-4">
           {UNIT_OPTIONS.map(opt => (
@@ -197,14 +233,20 @@ export default function UnitSelectionSheet({ pending, onAllResolved }: UnitSelec
                 {opt.examples}
               </p>
               {/* Show derived unit_price if quantity is known */}
-              {current.quantity !== null && current.quantity > 0 && (
-                <p
-                  className="text-[11px] font-semibold mt-2 pt-2"
-                  style={{ color: colors.accent, borderTop: `1px solid ${colors.bg}` }}
-                >
-                  = {fmt(current.total_amount / current.quantity)} / {opt.unit}
-                </p>
-              )}
+              {(() => {
+                const q = manualQuantity.trim() !== '' ? parseFloat(manualQuantity) : current.quantity;
+                if (q && q > 0) {
+                  return (
+                    <p
+                      className="text-[11px] font-semibold mt-2 pt-2"
+                      style={{ color: colors.accent, borderTop: `1px solid ${colors.bg}` }}
+                    >
+                      = {fmt(current.total_amount / q)} / {opt.unit}
+                    </p>
+                  );
+                }
+                return null;
+              })()}
             </button>
           ))}
         </div>
