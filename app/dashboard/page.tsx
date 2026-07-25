@@ -224,6 +224,7 @@ function HomeTab({
   onVoiceComplete: (r: LogVoiceResponse) => void
   isRecording: boolean
 }) {
+  const router = useRouter()
   return (
     <div className="px-4 pt-5 space-y-5">
       {/* P&L card */}
