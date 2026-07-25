@@ -97,7 +97,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Step 3: sort dates newest-first, paginate
-  const allDates   = [...dateMap.keys()].sort((a, b) => b.localeCompare(a))
+  const allDates   = Array.from(dateMap.keys()).sort((a, b) => b.localeCompare(a))
   const totalDates = allDates.length
   const totalPages = Math.ceil(totalDates / limit)
   const pageDates  = allDates.slice(offset, offset + limit)
