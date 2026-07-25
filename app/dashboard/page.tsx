@@ -272,15 +272,36 @@ function HomeTab({
         )}
       </div>
 
-      {/* Today's transactions */}
-      {data?.transactions && data.transactions.length > 0 && (
-        <div className="anim-fade-up">
-          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-500 mb-3">
-            Today&apos;s Entries
-          </p>
-          <TransactionList transactions={data.transactions} />
-        </div>
-      )}
+      {/* Today's transactions — cap at 10, show "View all" if more */}
+      {data?.transactions && data.transactions.length > 0 && (() => {
+        const txSlice   = data.transactions.slice(0, 10)
+        const hasMore   = data.transactions.length > 10
+        return (
+          <div className="anim-fade-up">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-500">
+                Today&apos;s Entries
+              </p>
+              <span className="text-[10px] text-muted-500">
+                {data.transactions.length} total
+              </span>
+            </div>
+            <TransactionList transactions={txSlice} />
+            {hasMore && (
+              <button
+                onClick={() => router.push('/history')}
+                className="w-full mt-3 py-3 rounded-xl flex items-center justify-center gap-1.5 font-semibold text-sm transition-all active:scale-98"
+                style={{ background: 'white', border: '1.5px solid #E8E0D0', color: '#0F3D2E' }}
+              >
+                Aur {data.transactions.length - 10} entries dekhein
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
+              </button>
+            )}
+          </div>
+        )
+      })()}
 
       {/* Empty state — no transactions yet */}
       {!isLoading && (!data?.transactions || data.transactions.length === 0) && (
