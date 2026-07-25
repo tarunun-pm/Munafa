@@ -52,8 +52,31 @@ export interface Supplier {
   id: string;
   vendor_id: string;
   name: string;
+  phone: string | null;
   aliases: string[] | null;
   created_at: string;
+}
+
+/** A supplier candidate returned during fuzzy-match deduplication. */
+export interface SupplierMatch {
+  id: string;
+  name: string;
+  phone: string | null;
+  /** Jaro-Winkler similarity score 0–1. */
+  similarity: number;
+}
+
+/**
+ * Represents a voice-logged transaction whose supplier could not be
+ * auto-resolved (fuzzy match found but needs user confirmation).
+ */
+export interface PendingSupplier {
+  /** ID of the saved transaction row (supplier_id is null until resolved). */
+  transaction_id: string;
+  /** Supplier name as Claude extracted it from voice. */
+  parsed_name: string;
+  /** Existing suppliers that are similar enough to warrant confirmation. */
+  similar_matches: SupplierMatch[];
 }
 
 /** Row shape for the transactions table. */
@@ -133,6 +156,8 @@ export interface LogVoiceResponse {
   entries: Transaction[];
   confirmation_text: string;
   unresolved_items?: ParsedEntry[];
+  /** Suppliers that need user confirmation before being linked to a transaction. */
+  pending_suppliers?: PendingSupplier[];
 }
 
 /** Response from GET /api/get-summary. */

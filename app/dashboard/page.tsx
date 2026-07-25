@@ -9,7 +9,8 @@ import TransactionList from '@/components/TransactionList'
 import ConfirmationToast from '@/components/ConfirmationToast'
 import BottomNav from '@/components/BottomNav'
 import ProfileModal from '@/components/ProfileModal'
-import type { GetSummaryResponse, VoiceRecorderState, LogVoiceResponse } from '@/types'
+import SupplierConfirmationSheet from '@/components/SupplierConfirmationSheet'
+import type { GetSummaryResponse, LogVoiceResponse, PendingSupplier, VoiceRecorderState } from '@/types'
 
 function getGreeting(): string {
   const h = new Date().getHours()
@@ -40,6 +41,7 @@ export default function DashboardPage() {
   const [recorderState, setRecorderState] = useState<VoiceRecorderState>('idle')
   const [mounted, setMounted]       = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const [pendingSuppliers, setPendingSuppliers] = useState<PendingSupplier[] | null>(null)
 
   /* ── Fetch today's summary ── */
   const fetchSummary = useCallback(async () => {
@@ -71,6 +73,10 @@ export default function DashboardPage() {
     }
     if (result.success) {
       fetchSummary()
+    }
+    // If any supplier needs user confirmation, show the sheet
+    if (result.pending_suppliers?.length) {
+      setPendingSuppliers(result.pending_suppliers)
     }
   }
 
@@ -169,6 +175,17 @@ export default function DashboardPage() {
         <ConfirmationToast
           text={toast}
           onDismiss={() => setToast(null)}
+        />
+      )}
+
+      {/* ── Supplier confirmation sheet ── */}
+      {pendingSuppliers && pendingSuppliers.length > 0 && (
+        <SupplierConfirmationSheet
+          pending={pendingSuppliers}
+          onAllResolved={() => {
+            setPendingSuppliers(null)
+            fetchSummary()
+          }}
         />
       )}
 
