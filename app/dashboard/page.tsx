@@ -10,7 +10,8 @@ import ConfirmationToast from '@/components/ConfirmationToast'
 import BottomNav from '@/components/BottomNav'
 import ProfileModal from '@/components/ProfileModal'
 import SupplierConfirmationSheet from '@/components/SupplierConfirmationSheet'
-import type { GetSummaryResponse, LogVoiceResponse, PendingSupplier, VoiceRecorderState } from '@/types'
+import UnitSelectionSheet from '@/components/UnitSelectionSheet'
+import type { GetSummaryResponse, LogVoiceResponse, PendingSupplier, PendingUnit, VoiceRecorderState } from '@/types'
 
 function getGreeting(): string {
   const h = new Date().getHours()
@@ -42,6 +43,7 @@ export default function DashboardPage() {
   const [mounted, setMounted]       = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [pendingSuppliers, setPendingSuppliers] = useState<PendingSupplier[] | null>(null)
+  const [pendingUnits, setPendingUnits] = useState<PendingUnit[] | null>(null)
 
   /* ── Fetch today's summary ── */
   const fetchSummary = useCallback(async () => {
@@ -77,6 +79,10 @@ export default function DashboardPage() {
     // If any supplier needs user confirmation, show the sheet
     if (result.pending_suppliers?.length) {
       setPendingSuppliers(result.pending_suppliers)
+    }
+    // If any entry is missing a unit, show the unit picker
+    if (result.pending_units?.length) {
+      setPendingUnits(result.pending_units)
     }
   }
 
@@ -175,6 +181,17 @@ export default function DashboardPage() {
         <ConfirmationToast
           text={toast}
           onDismiss={() => setToast(null)}
+        />
+      )}
+
+      {/* ── Unit selection sheet ── */}
+      {pendingUnits && pendingUnits.length > 0 && (
+        <UnitSelectionSheet
+          pending={pendingUnits}
+          onAllResolved={() => {
+            setPendingUnits(null)
+            fetchSummary()
+          }}
         />
       )}
 

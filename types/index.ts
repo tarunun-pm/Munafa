@@ -79,6 +79,23 @@ export interface PendingSupplier {
   similar_matches: SupplierMatch[];
 }
 
+/**
+ * Represents a voice-logged transaction where Claude could not determine
+ * the unit of measurement. User must select before the entry is complete.
+ */
+export interface PendingUnit {
+  /** ID of the saved transaction row (unit is null until resolved). */
+  transaction_id: string;
+  /** Human-readable item name from voice. */
+  item_name: string;
+  /** Quantity Claude extracted, if any (e.g. 2, 0.5). */
+  quantity: number | null;
+  /** Total amount paid/received. */
+  total_amount: number;
+  /** Whether this was a purchase or sale. */
+  entry_type: EntryType;
+}
+
 /** Row shape for the transactions table. */
 export interface Transaction {
   id: string;
@@ -158,6 +175,8 @@ export interface LogVoiceResponse {
   unresolved_items?: ParsedEntry[];
   /** Suppliers that need user confirmation before being linked to a transaction. */
   pending_suppliers?: PendingSupplier[];
+  /** Entries where Claude couldn't determine the unit — user must select. */
+  pending_units?: PendingUnit[];
 }
 
 /** Response from GET /api/get-summary. */

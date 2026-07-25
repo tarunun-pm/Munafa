@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { parseVoiceTranscript } from '@/lib/claude'
-import type { ParsedEntry, PendingSupplier, SupplierMatch, Transaction } from '@/types'
+import type { ParsedEntry, PendingSupplier, PendingUnit, SupplierMatch, Transaction } from '@/types'
 
 function sb(): SupabaseClient {
   return createClient(
@@ -207,6 +207,7 @@ export async function POST(req: NextRequest) {
     const saved: Transaction[] = []
     const unresolved: ParsedEntry[] = []
     const pendingSuppliers: PendingSupplier[] = []
+    const pendingUnits: PendingUnit[] = []
 
     // ── Steps 3-6: Match items, suppliers, write to DB ─────
     for (const entry of parseResult.entries) {
@@ -278,6 +279,20 @@ export async function POST(req: NextRequest) {
           unit: entry.unit,
         })
       }
+
+      // If unit is missing on an expense or sale entry, flag for user input
+      if (
+        entry.unit === null &&
+        (entry.entry_type === 'expense' || entry.entry_type === 'sale')
+      ) {
+        pendingUnits.push({
+          transaction_id: tx.id,
+          item_name: entry.item_name,
+          quantity: entry.quantity,
+          total_amount: entry.total_price,
+          entry_type: entry.entry_type,
+        })
+      }
     }
 
     // ── Step 7: Build confirmation text ────────────────────
@@ -301,6 +316,7 @@ export async function POST(req: NextRequest) {
       confirmation_text: confirmationText,
       unresolved_items: unresolved.length > 0 ? unresolved : undefined,
       pending_suppliers: pendingSuppliers.length > 0 ? pendingSuppliers : undefined,
+      pending_units: pendingUnits.length > 0 ? pendingUnits : undefined,
     })
   } catch (err) {
     console.error('[log-voice] unexpected error:', err)
